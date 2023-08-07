@@ -1,11 +1,30 @@
 const User = require("../models/userModel");
 var jwt = require("jsonwebtoken");
 const { promisify } = require("util");
-
+const sendEmail = require("../utils/emailSender");
+const crypto = require("crypto");
+const { compare } = require("bcryptjs");
+///////////////////////////////////////////////
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.TOKEN_SECRET, {
     expiresIn: process.env.Token_EXPIRES_IN,
   });
+};
+
+const sendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+
+  const cookiesOptions = {
+    expires: new Date(
+      Date.now() + process.env.Token_COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
+  if (process.env.NODE_ENV === "production") cookiesOptions.secure = true;
+
+  user.password = undefined;
+  res.cookie("jwt", token, cookiesOptions);
+  res.status(statusCode).json({ message: "success", token, data: user });
 };
 
 exports.signUp = async (req, res) => {
@@ -48,8 +67,7 @@ exports.signUp = async (req, res) => {
     const newUser = await user.save();
 
     // Generate and send JWT token
-    const token = signToken(newUser._id);
-    res.status(201).json({ message: "User created", token, data: newUser });
+    sendToken(newUser, 201, res);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -63,14 +81,13 @@ exports.login = async (req, res, next) => {
       return next(new Error("Please provide email and password"));
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    let user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.comparePassword(password, user.password))) {
       return next(new Error("Incorrect email or password"));
     }
 
-    const token = signToken(user._id);
-    res.status(200).json({ message: "User logged in", token });
+    sendToken(user, 200, res);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -134,4 +151,71 @@ exports.forgotPassword = async (req, res, next) => {
   //generate random token
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
+
+  //send it to user's email
+  const resetURL = `${req.protocol}://${req.get(
+    "host"
+  )}/users/resetPassword/${resetToken}`;
+
+  const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
+  try {
+    sendEmail({
+      email: user.email,
+      subject: "Your password reset token (valid for 10 min)",
+      message,
+    });
+
+    res.status(200).json({
+      message: "Token sent to email",
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    return next(res.status(500).json({ message: error.message }));
+  }
+};
+//reset password
+exports.resetPassword = async (req, res, next) => {
+  // get user using token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+  if (!user) {
+    return next(
+      res.status(400).json({ message: "Token is invalid or has expired" })
+    );
+  }
+  //set new password
+  user.password = req.body.password;
+  user.passwordConform = req.body.passwordConform;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+  //log the user in, send JWT
+  const token = signToken(user._id);
+  res.status(200).json({ message: "User logged in", token });
+};
+// update password
+exports.updatePassword = async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+password");
+
+  if (!(await user.comparePassword(req.body.passwordCurrent, user.password))) {
+    return next(new Error("Your current password is wrong"));
+  }
+  user.password = req.body.password;
+  user.passwordConform = req.body.passwordConform;
+  await user.save();
+  sendToken(user, 201, res);
+};
+
+//delete user
+exports.deleteMe = async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { active: false });
+  res.status(204).json({ message: "User deleted" });
 };

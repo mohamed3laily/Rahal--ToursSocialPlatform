@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
       },
       message: "Passwords are not the same!",
     },
+    select: false,
   },
   firstName: {
     type: String,
@@ -62,6 +63,12 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  changedPasswordAt: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // Hash the password before saving the user to the database
@@ -76,6 +83,18 @@ userSchema.pre("save", async function (next) {
   } catch (error) {
     next(error);
   }
+});
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew) return next();
+
+  this.changedPasswordAt = Date.now() - 1000;
+  next();
+});
+
+userSchema.pre(/^find/, function (next) {
+  // this points to the current query
+  this.find({ active: { $ne: false } });
+  next();
 });
 
 // instance methode Compare the entered password with the password in the database
