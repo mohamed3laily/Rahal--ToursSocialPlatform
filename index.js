@@ -9,6 +9,7 @@ const reteLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const xss = require("xss-clean");
 const mongoSanitize = require("express-mongo-sanitize");
+const reviewsRoutes = require("./routes/reviewsRoutes");
 
 const app = express();
 // Set up security HTTP headers
@@ -30,6 +31,7 @@ app.use(mongoSanitize());
 app.use(cors());
 app.use("/users", userRoutes);
 app.use("/tours", toursRoutes);
+app.use("/reviews", reviewsRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
