@@ -86,6 +86,7 @@ toursSchema.virtual("reviews", {
   foreignField: "tour",
   localField: "_id",
 });
+toursSchema.index({ price: 1, rating: -1 });
 
 toursSchema.pre(/^find/, function (next) {
   this.populate({
