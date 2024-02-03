@@ -10,6 +10,7 @@ router
   .post(
     authController.protect,
     authController.restrictTo("user" || "admin"),
+    postController.createPostMid,
     postController.createPost
   );
 router
