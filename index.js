@@ -12,6 +12,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const reviewsRoutes = require("./routes/reviewsRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const postRoutes = require("./routes/postsRoutes");
+const commentRoutes = require("./routes/commentRoutes");
 
 const app = express();
 // Set up security HTTP headers
@@ -36,6 +37,7 @@ app.use("/tours", toursRoutes);
 app.use("/reviews", reviewsRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/posts", postRoutes);
+app.use("/comments", commentRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
