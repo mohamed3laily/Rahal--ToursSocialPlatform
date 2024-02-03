@@ -1,7 +1,17 @@
 const Post = require("../models/postModel");
 const factory = require("./handlerFactory");
 
-exports.getPost = factory.getOne(Post);
+exports.createPostMid = async (req, res, next) => {
+  try {
+    if (!req.body.author) req.body.author = req.user.id;
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+
+  next();
+};
+
+exports.getPost = factory.getOne(Post, { path: "comments" });
 
 exports.getAllPosts = factory.getAll(Post);
 

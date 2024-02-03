@@ -6,8 +6,9 @@ exports.deleteOne = (Model) => async (req, res, next) => {
     if (!deletedItem) {
       return next(res.status(404).json({ message: "Item not found" }));
     }
-    res.status(204).json({
+    res.status(200).json({
       status: "success",
+      message: "Deleted succesfully",
       data: null,
     });
   } catch (error) {

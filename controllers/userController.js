@@ -4,7 +4,7 @@ const factory = require("./handlerFactory");
 const User = require("../models/userModel");
 
 //get user midelleware
-const getUser = async (req, res, next) => {
+exports.getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (user == null) {

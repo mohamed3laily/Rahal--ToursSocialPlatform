@@ -75,16 +75,27 @@ exports.signUp = async (req, res) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, userName, password } = req.body;
 
-    if (!email && !password) {
-      return next(new Error("Please provide email and password"));
+    if (!password) {
+      return next(new Error("Please provide a password"));
     }
 
-    let user = await User.findOne({ email }).select("+password");
+    // Check if either email or userName is provided
+    if (!email && !userName) {
+      return next(new Error("Please provide email or username"));
+    }
+
+    let user;
+
+    if (email) {
+      user = await User.findOne({ email }).select("+password");
+    } else if (userName) {
+      user = await User.findOne({ userName }).select("+password");
+    }
 
     if (!user || !(await user.comparePassword(password, user.password))) {
-      return next(new Error("Incorrect email or password"));
+      return next(new Error("Incorrect email/username or password"));
     }
 
     sendToken(user, 200, res);
