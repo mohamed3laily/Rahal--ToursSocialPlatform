@@ -13,6 +13,8 @@ const reviewsRoutes = require("./routes/reviewsRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const postRoutes = require("./routes/postsRoutes");
 const commentRoutes = require("./routes/commentRoutes");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 const app = express();
 // Set up security HTTP headers
@@ -38,6 +40,7 @@ app.use("/reviews", reviewsRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/posts", postRoutes);
 app.use("/comments", commentRoutes);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Connect to MongoDB
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
@@ -45,6 +48,10 @@ mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
