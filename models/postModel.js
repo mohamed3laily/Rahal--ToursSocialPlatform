@@ -1,5 +1,32 @@
 const mongoose = require("mongoose");
-
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Post:
+ *       type: object
+ *       required:
+ *         - content
+ *         - author
+ *
+ *       properties:
+ *         content:
+ *           type: string
+ *         author:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         photos:
+ *          type: array
+ *
+ *
+ *       example:
+ *         content: "Faaaaaaaaaaaaaaager is the best!"
+ *         author: 1548162188454521
+ *         createdAt: "2022-02-08T12:00:00Z"
+ *         photos: ["https://www.google.com/image1.jpg", "https://www.google.com/image2.jpg"]
+ */
 // Define the Post schema
 const postSchema = new mongoose.Schema(
   {
