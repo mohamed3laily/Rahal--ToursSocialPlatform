@@ -15,6 +15,7 @@ const postRoutes = require("./routes/postsRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
+const facebookOauth = require("./controllers/facebookOauth");
 
 const app = express();
 // Set up security HTTP headers
@@ -40,6 +41,7 @@ app.use("/reviews", reviewsRoutes);
 app.use("/booking", bookingRoutes);
 app.use("/posts", postRoutes);
 app.use("/comments", commentRoutes);
+app.use("/auth/facebook", facebookOauth);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Connect to MongoDB
